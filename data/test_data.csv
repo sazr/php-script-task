@@ -1,4 +1,4 @@
-surname,email,name
+name,surname,email
 John,smith,jsmith@gmail.com
 Phil ,CARRY   ,phil@open.edu.au  
 Johnny,O'Hare,john@yahoo.com.au
@@ -9,8 +9,8 @@ Sam!!  ,WalTERS,sam!@walters.org
 Daley,thompson,daley@yahoo.co.nz
 kevin,Ruley,kevin.ruley@gmail.com
 Edward ,JIKES,edward@jikes@com.au
-Österreich,annie.osterreich@example.com,Annië
-Montréal,chloe.montreal@example.com,Chloé
-Schön,nikolaus.schon@example.com,Nikolaus
-García,jose.garcia@example.com,José
-Dupont,helene.dupont@example.com,Hélène
+Annië,Österreich,annie.osterreich@example.com
+Chloé,Montréal,chloe.montreal@example.com
+Nikolaus,Schön,nikolaus.schon@example.com
+José,García,jose.garcia@example.com
+Hélène,Dupont,helene.dupont@example.com

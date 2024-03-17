@@ -173,7 +173,7 @@ USAGE;
             return false;
         }
 
-        $file_handle   = fopen($file, "r");
+        $file_handle   = fopen($file, 'r, ,', 'UTF-8');
         if ($file_handle === false) {
             echo "Failed to open file: $file\n";
             return false;
@@ -203,8 +203,8 @@ USAGE;
 
             // Sanitise/validate data.
             $user['email']   = filter_var($user['email'], FILTER_SANITIZE_EMAIL);
-            $user['name']    = filter_var($user['name'], FILTER_SANITIZE_STRING);
-            $user['surname'] = filter_var($user['surname'], FILTER_SANITIZE_STRING);
+            $user['name']    = filter_var($user['name'], FILTER_SANITIZE_ADD_SLASHES | FILTER_SANITIZE_STRING);
+            $user['surname'] = filter_var($user['surname'], FILTER_SANITIZE_ADD_SLASHES | FILTER_SANITIZE_STRING);
 
             if ( empty($user['email']) || empty($user['name']) || empty($user['surname']) ) {
                 echo "Invalid data format: " . json_encode( $user ) . "\n";
@@ -241,7 +241,7 @@ USAGE;
     }
 
     public function format_email( $value  ) {
-        $pattern  = '/^\s+|[\x00-\x1F\x7F]|[\r\n\t"\']|[^\p{L}\p{N}\p{P}\p{S}\p{Z}]|\s+$/u';
+        $pattern  = '/^\s+|[\x00-\x1F\x7F]|[\r\n\t"]|[^\p{L}\p{N}\p{P}\p{S}\p{Z}]|\s+$/u';
         $value    = strtolower( preg_replace( $pattern, '', $value ) );
         return $value;
     }

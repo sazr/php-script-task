@@ -21,7 +21,7 @@ class UserUpload {
                 return;
             }
 
-            $this->handle_build_user_table( $db_host, $db_username, $db_password, false, true );
+            $this->handle_build_user_table( $db_host, $db_username, $db_password, true );
         } elseif ( $file ) {
             if ( ! $db_props_provided && ! $is_dry_run ) {
                 echo "MySQL username (-u), password (-p), and host (-h) are required when using --file or --create_table options.\n";
@@ -33,10 +33,14 @@ class UserUpload {
                 return;
             }
 
-            // Create the database/table just incase it doesn't exist yet
-            $this->handle_build_user_table( $db_host, $db_username, $db_password, $is_dry_run, false );
+            if ( $is_dry_run ) {
+                return;
+            }
 
-            $this->handle_import_users( $users, $db_host, $db_username, $db_password, $is_dry_run );
+            // Create the database/table just incase it doesn't exist yet
+            $this->handle_build_user_table( $db_host, $db_username, $db_password, false );
+
+            $this->handle_import_users( $users, $db_host, $db_username, $db_password );
         } elseif ( $help ) {
             $this->handle_help();
         } else {
@@ -45,27 +49,27 @@ class UserUpload {
         }
     }
 
-    public function handle_build_user_table( $db_host, $db_username, $db_password, $is_dry_run = false, $cleanse = false ) {
+    public function handle_build_user_table( $db_host, $db_username, $db_password, $cleanse = false ) {
         $mysqli = new mysqli($db_host, $db_username, $db_password);
         
         try {
             if ($mysqli->connect_error) {
-                echo("Connection failed: " . $mysqli->connect_error);
+                throw new Exception("Connection failed: " . $mysqli->connect_error);
             }
 
             $mysqli->begin_transaction();
 
-            // Create database if it doesn't exist.
+            // Create database if it doesn't exist. I notice the task documentation didn't instruct adding a database name command line argument. So I have made an assumption I need to create the database as part of the task.
             $sql = "CREATE DATABASE IF NOT EXISTS website_users CHARACTER SET utf8 COLLATE utf8_general_ci;";
             $result = $mysqli->query($sql);
 
             if ( $result !== TRUE ) {
-                echo "Error creating database: " . $mysqli->error . "\n";
+                throw new Exception("Error creating database: " . $mysqli->error);
             }
 
             $mysqli->select_db( "website_users" );
             if ($mysqli->error) {
-                echo "Error using database: " . $mysqli->error . "\n";
+                throw new Exception("Error using database: " . $mysqli->error);
             }
 
             if ( $cleanse ) {
@@ -73,7 +77,7 @@ class UserUpload {
                 $result = $mysqli->query($sql);
 
                 if ( $result !== TRUE ) {
-                    echo "Error dropping table: " . $mysqli->error . "\n";
+                    throw new Exception("Error dropping table: " . $mysqli->error);
                 }
             }
 
@@ -85,15 +89,11 @@ class UserUpload {
             $result = $mysqli->query($sql);
 
             if ( $result !== TRUE ) {
-                echo "Error creating table: " . $mysqli->error . "\n";
+                throw new Exception("Error creating table: " . $mysqli->error);
             }
 
-            if ( $is_dry_run ) {
-                $mysqli->rollback();
-            } else {
-                $mysqli->commit();
-                echo "Table created successfully\n";
-            }
+            $mysqli->commit();
+            echo "Table created successfully\n";
         }
         catch (Exception $e) {
             echo "Error: " . $e->getMessage() . "\n";
@@ -203,21 +203,25 @@ USAGE;
 
             // Sanitise/validate data.
             $user['email']   = filter_var($user['email'], FILTER_SANITIZE_EMAIL);
-            $user['name']    = filter_var($user['name'], FILTER_SANITIZE_ADD_SLASHES | FILTER_SANITIZE_STRING);
-            $user['surname'] = filter_var($user['surname'], FILTER_SANITIZE_ADD_SLASHES | FILTER_SANITIZE_STRING);
+            $user['name']    = filter_var($user['name'], FILTER_UNSAFE_RAW | FILTER_SANITIZE_STRING);
+            $user['surname'] = filter_var($user['surname'], FILTER_UNSAFE_RAW | FILTER_SANITIZE_STRING);
 
             if ( empty($user['email']) || empty($user['name']) || empty($user['surname']) ) {
+                // Assumption: The task document says "In case that an email is invalid, no insert should be made to database and an error message should be reported to STDOUT". I'm assuming echo is ok for STDOUT here and you're not asking for error_log() or something else.
                 echo "Invalid data format: " . json_encode( $user ) . "\n";
                 return false;
             }
+            // Validate email.
+            // if ( empty( preg_match('/^\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b$/', $user['email']) ) ) {
             
             // Format data.
-            $pattern         = '/[\x00-\x1F\x7F]|[\r\n\t"\']|[^\p{L}\p{N}\p{P}\p{S}\p{Z}]/u';
             $user['email']   = $this->format_email( $user['email'] );
             $user['name']    = $this->format_string( $user['name'], true );
             $user['surname'] = $this->format_string( $user['surname'], true );
             $users[]         = $user;
         }
+
+        echo "Users" . json_encode($users) . "\n";
 
         fclose($file_handle);
 
@@ -230,7 +234,8 @@ USAGE;
     }
 
     public function format_string( $value, $capitalise = false ) {
-        $pattern  = '/^\s+|[\x00-\x1F\x7F]|[\r\n\t"\']|[^\p{L}\p{N}\p{P}\p{S}\p{Z}]|\s+$/u';
+        // Assumption: making an assumption that ! is ok in a name/surname. For eg Sam!!. If not, I can remove it.
+        $pattern  = '/^\s+|[\x00-\x1F\x7F]|[\r\n\t"]|[^\p{L}\p{N}\p{P}\p{S}\p{Z}]|\s+$/u';
         $value    = strtolower( preg_replace( $pattern, '', $value ) );
 
         if ( $capitalise ) {

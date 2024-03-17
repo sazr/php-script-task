@@ -1,0 +1,11 @@
+name,surname,email
+"John","Doe","john.doe@example"
+"Jane","Doe","jane.doe@examplecom"
+"Jimbo","Smith","jimbo@gmail,com"
+"Susan","Johnson","susan@example."
+"Tom","Brown","@example.com"
+"Alex","Taylor","invalid-email"
+"Emily","Clark","12345@example.com"
+"Laura","Miller","user@-example.com"
+"Chris","Moore","user@example.c"
+"David","Garcia","abc@def@gmail.com"

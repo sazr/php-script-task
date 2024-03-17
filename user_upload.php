@@ -6,14 +6,13 @@ class UserUpload {
 
     public function handle_directive() {
         $options           = getopt("u:p:h:", ["file:", "create_table", "dry_run", "help"]);
-        echo print_r($options, true);
         $file              = ! empty($options['file']) ? $options['file'] : null;
-        $create_table      = ! empty($options['create_table']);
-        $help              = ! empty($options['help']);
+        $create_table      = isset($options['create_table']);
+        $help              = isset($options['help']);
         $db_host           = ! empty($options['h']) ? $options['h'] : null;
         $db_username       = ! empty($options['u']) ? $options['u'] : null;
         $db_password       = ! empty($options['p']) ? $options['p'] : null;
-        $is_dry_run        = ! empty($options['dry_run']);
+        $is_dry_run        = isset($options['dry_run']);
         $db_props_provided = ! empty( $db_host ) && ! empty( $db_username ) && ! empty( $db_password );
 
         if ( $create_table ) {
@@ -186,17 +185,13 @@ USAGE;
         }
 
         // Sanitise header data.
-        $headers = array_map(function($header) {
+        $headers = array_reduce($headers, function($result, $header) {
             $heading = filter_var($header, FILTER_SANITIZE_STRING);
-            if ( empty($heading) ) {
-                return false;
+            if (!empty($heading)) {
+                $result[] = $this->format_string($heading);
             }
-
-            $pattern = '/[\x00-\x1F\x7F]|[\r\n\t"\']|[^\p{L}\p{N}\p{P}\p{S}\p{Z}]/u';
-            $heading = preg_replace($pattern, '', $heading);
-
-            return strtolower($heading);
-        }, $headers);
+            return $result;
+        }, []);
         
         while ( $row = fgetcsv($file_handle) ) {
             $user = array_combine($headers, $row);
@@ -217,9 +212,9 @@ USAGE;
             
             // Format data.
             $pattern         = '/[\x00-\x1F\x7F]|[\r\n\t"\']|[^\p{L}\p{N}\p{P}\p{S}\p{Z}]/u';
-            $user['email']   = strtolower( trim( preg_replace($pattern, '', $user['email'] ) ) );
-            $user['name']    = ucfirst( trim( preg_replace($pattern, '', $user['name'] ) ) );
-            $user['surname'] = ucfirst( trim( preg_replace($pattern, '', $user['surname'] ) ) );
+            $user['email']   = $this->format_email( $user['email'] );
+            $user['name']    = $this->format_string( $user['name'], true );
+            $user['surname'] = $this->format_string( $user['surname'], true );
             $users[]         = $user;
         }
 
@@ -231,6 +226,23 @@ USAGE;
         }
 
         return $users;
+    }
+
+    public function format_string( $value, $capitalise = false ) {
+        $pattern  = '/^\s+|[\x00-\x1F\x7F]|[\r\n\t"\']|[^\p{L}\p{N}\p{P}\p{S}\p{Z}]|\s+$/u';
+        $value    = strtolower( preg_replace( $pattern, '', $value ) );
+
+        if ( $capitalise ) {
+            $value = ucwords( $value );
+        }
+
+        return $value;
+    }
+
+    public function format_email( $value  ) {
+        $pattern  = '/^\s+|[\x00-\x1F\x7F]|[\r\n\t"\']|[^\p{L}\p{N}\p{P}\p{S}\p{Z}]|\s+$/u';
+        $value    = strtolower( preg_replace( $pattern, '', $value ) );
+        return $value;
     }
 }
 

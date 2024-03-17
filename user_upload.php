@@ -119,7 +119,8 @@ class UserUpload {
             $mysqli->begin_transaction();
 
             foreach ($users as $user) {
-                $sql = "INSERT INTO users (email, name, surname) VALUES (?, ?, ?)";
+                $sql = "INSERT INTO users (email, name, surname) VALUES (?, ?, ?) 
+                ON DUPLICATE KEY UPDATE name = VALUES(name), surname = VALUES(surname)";
                 $stmt = $mysqli->prepare($sql);
                 
                 if (!$stmt) {

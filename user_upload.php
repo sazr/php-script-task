@@ -1,9 +1,16 @@
 <?php
 
+/**
+ * Class UserUpload
+ * 
+ * This class handles the processing of user data from a CSV file
+ * and insertion into a MySQL database.
+ */
 class UserUpload {
 
-    public const DB_NAME = "website_users";
-
+    /**
+     * Handles the command line directives and initiates the appropriate actions.
+     */
     public function handle_directive() {
         $options           = getopt( "u:p:h:", [ "file:", "create_table", "dry_run", "help" ] );
         $file              = ! empty( $options['file'] ) ? $options['file'] : null;
@@ -37,7 +44,7 @@ class UserUpload {
                 return;
             }
 
-            // Create the database/table just incase it doesn't exist yet.
+            // Create the database/table just in case it doesn't exist yet.
             $this->handle_build_user_table( $db_host, $db_username, $db_password, false );
 
             $this->handle_import_users( $users, $db_host, $db_username, $db_password );
@@ -49,6 +56,14 @@ class UserUpload {
         }
     }
 
+    /**
+     * Creates or rebuilds the user table in the database.
+     * 
+     * @param string $db_host MySQL host
+     * @param string $db_username MySQL username
+     * @param string $db_password MySQL password
+     * @param bool $cleanse Whether to drop existing table before creating
+     */
     public function handle_build_user_table( $db_host, $db_username, $db_password, $cleanse = false ) {
         $mysqli = new mysqli( $db_host, $db_username, $db_password );
         
@@ -104,6 +119,18 @@ class UserUpload {
         }
     }
 
+    /**
+     * Handles the import of user data into the MySQL database.
+     * 
+     * This method prepares and executes SQL statements to insert user data into the 'users' table.
+     * If a user with the same email already exists in the table, the 'name' and 'surname' fields are updated.
+     * 
+     * @param array $users An array containing user data to be imported
+     * @param string $db_host The MySQL database host
+     * @param string $db_username The MySQL database username
+     * @param string $db_password The MySQL database password
+     * @param bool $is_dry_run Whether to perform a dry run (default is false)
+     */
     public function handle_import_users( $users, $db_host, $db_username, $db_password, $is_dry_run = false ) {
         $mysqli = new mysqli( $db_host, $db_username, $db_password, "website_users" );
 
@@ -150,6 +177,9 @@ class UserUpload {
         }
     }
 
+    /**
+     * Displays help documentation for using the script.
+     */
     public function handle_help() {
         echo <<<USAGE
 Usage: php user_upload.php [options]
@@ -164,6 +194,12 @@ Options:
 USAGE;
     }
 
+    /**
+     * Parses the CSV file containing user data.
+     * 
+     * @param string $file The path to the CSV file
+     * @return array|false An array containing user data if successful, or false on failure
+     */
     public function parse_users_csv( $file ) {
         $users = array();
 
@@ -234,6 +270,13 @@ USAGE;
         return $users;
     }
 
+    /**
+     * Formats a string by removing unwanted characters and optionally capitalizing it.
+     * 
+     * @param string $value The string to be formatted
+     * @param bool $capitalise Whether to capitalize the string (default is false)
+     * @return string The formatted string
+     */
     public function format_string( $value, $capitalise = false ) {
         // Assumption: making an assumption that ! is ok in a name/surname. For eg Sam!!. If not, I can remove it.
         $pattern  = '/^\s+|[\x00-\x1F\x7F]|[\r\n\t"]|[^\p{L}\p{N}\p{P}\p{S}\p{Z}]|\s+$/u';
@@ -246,6 +289,12 @@ USAGE;
         return $value;
     }
 
+    /**
+     * Formats an email address by removing unwanted characters.
+     * 
+     * @param string $value The email address to be formatted
+     * @return string The formatted email address
+     */
     public function format_email( $value  ) {
         $pattern  = '/^\s+|[\x00-\x1F\x7F]|[\r\n\t"]|[^\p{L}\p{N}\p{P}\p{S}\p{Z}]|\s+$/u';
         $value    = html_entity_decode( strtolower( preg_replace( $pattern, '', $value ) ) );

@@ -59,7 +59,7 @@ class UserUpload {
 
             $mysqli->begin_transaction();
 
-            // Create database if it doesn't exist. I notice the task documentation didn't instruct adding a database name command line argument. So I have made an assumption I need to create the database as part of the task.
+            // Create database if it doesn't exist. I notice the task documentation didn't instruct adding a "Database name" command line argument. So I have made an assumption I need to create the database as part of the task.
             $sql = "CREATE DATABASE IF NOT EXISTS website_users CHARACTER SET utf8 COLLATE utf8_general_ci;";
             $result = $mysqli->query($sql);
 
@@ -127,7 +127,6 @@ class UserUpload {
                     throw new Exception("Error preparing statement: " . $mysqli->error);
                 }
 
-                // Handle special characters like German umlauts (ö), apostrophes for Irish names, etc. I've had this issue before, specifically ö, and learnt my lesson.
                 $email = mb_convert_encoding($user['email'], "UTF-8");
                 $name = mb_convert_encoding($user['name'], "UTF-8");
                 $surname = mb_convert_encoding($user['surname'], "UTF-8");
@@ -199,28 +198,29 @@ USAGE;
 
             if ( empty($user['email']) || empty($user['name']) || empty($user['surname']) ) {
                 echo "Invalid row: " . json_encode( $user ) . "\n";
+                continue;
             }
 
             // Sanitise/validate data.
-            $user['email']   = filter_var($user['email'], FILTER_SANITIZE_EMAIL);
-            $user['name']    = filter_var($user['name'], FILTER_UNSAFE_RAW | FILTER_SANITIZE_STRING);
-            $user['surname'] = filter_var($user['surname'], FILTER_UNSAFE_RAW | FILTER_SANITIZE_STRING);
-
-            if ( empty($user['email']) || empty($user['name']) || empty($user['surname']) ) {
-                // Assumption: The task document says "In case that an email is invalid, no insert should be made to database and an error message should be reported to STDOUT". I'm assuming echo is ok for STDOUT here and you're not asking for error_log() or something else.
+            $email   = filter_var(trim($user['email']), FILTER_VALIDATE_EMAIL);
+            $name    = filter_var(trim($user['name']), FILTER_SANITIZE_STRING);
+            $surname = filter_var(trim($user['surname']), FILTER_SANITIZE_STRING);
+ 
+            if ( empty($email) || empty($name) || empty($surname) ) {
+                // Assumption: The task document says "In case that an email is invalid, no insert should be made to database and an error message should be reported to STDOUT". I'm assuming echo is ok for STDOUT here and you're not asking for error_log() or something else. Also assuming that the script execution should continue, not insert that specific user and not exit.
                 echo "Invalid data format: " . json_encode( $user ) . "\n";
-                return false;
+                continue;
             }
             // Validate email.
-            if ( ! $this->validate_email( $user['email'] ) ) {
+            if ( ! $this->validate_email( $email ) ) {
                 echo "Invalid email: " . json_encode( $user ) . "\n";
-                return false;
+                continue;
             }
-            
+
             // Format data.
-            $user['email']   = $this->format_email( $user['email'] );
-            $user['name']    = $this->format_string( $user['name'], true );
-            $user['surname'] = $this->format_string( $user['surname'], true );
+            $user['email']   = $this->format_email( $email );
+            $user['name']    = $this->format_string( $name, true );
+            $user['surname'] = $this->format_string( $surname, true );
             $users[]         = $user;
         }
 
@@ -237,7 +237,7 @@ USAGE;
     public function format_string( $value, $capitalise = false ) {
         // Assumption: making an assumption that ! is ok in a name/surname. For eg Sam!!. If not, I can remove it.
         $pattern  = '/^\s+|[\x00-\x1F\x7F]|[\r\n\t"]|[^\p{L}\p{N}\p{P}\p{S}\p{Z}]|\s+$/u';
-        $value    = strtolower( preg_replace( $pattern, '', $value ) );
+        $value    = html_entity_decode( strtolower( preg_replace( $pattern, '', $value ) ) );
 
         if ( $capitalise ) {
             $value = ucwords( $value );
@@ -248,7 +248,7 @@ USAGE;
 
     public function format_email( $value  ) {
         $pattern  = '/^\s+|[\x00-\x1F\x7F]|[\r\n\t"]|[^\p{L}\p{N}\p{P}\p{S}\p{Z}]|\s+$/u';
-        $value    = strtolower( preg_replace( $pattern, '', $value ) );
+        $value    = html_entity_decode( strtolower( preg_replace( $pattern, '', $value ) ) );
         return $value;
     }
 

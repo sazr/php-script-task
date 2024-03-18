@@ -1,6 +1,6 @@
 # User Upload Script
 
-Upload user data from a CSV file to a MySQL database.
+Upload user data from a CSV file to a MySQL database. AI has been used to assist with documenting the code and this readme. In a real world scenario I would not feed code into an AI or post on a site unless the company allows this and the code/data does not contain sensitive or privileged information.
 
 ## Usage
 
@@ -37,7 +37,7 @@ This directive will:
 ### Import/upload users from a CSV file into a MySQL database
 
 ```
-php user_upload.php --file="PATH_TO_FILE" -u root -p root -h localhost
+php user_upload.php --file "PATH_TO_FILE" -u root -p root -h localhost
 ```
 
 This directive will:

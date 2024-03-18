@@ -5,5 +5,5 @@ name,surname,email
 "Susan","Johnson","susan@example."
 "Tom","Brown","@example.com"
 "Alex","Taylor","invalid-email"
-"Laura","Miller","user@-example.com""
+"Laura","Miller","user@-example.com"
 "David","Garcia","abc@def@gmail.com"

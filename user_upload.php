@@ -22,6 +22,8 @@ class UserUpload {
         $is_dry_run        = isset( $options['dry_run'] );
         $db_props_provided = ! empty( $db_host ) && ! empty( $db_username ) && ! empty( $db_password );
 
+        echo "\n";
+
         if ( $create_table ) {
             if ( ! $db_props_provided ) {
                 echo "MySQL username (-u), password (-p), and host (-h) are required when using --file or --create_table options.\n";
@@ -108,7 +110,7 @@ class UserUpload {
             }
 
             $mysqli->commit();
-            echo "Table created successfully\n";
+            echo "Table initialised successfully\n";
         }
         catch ( Exception $e ) {
             echo "Error: " . $e->getMessage() . "\n";
@@ -168,6 +170,7 @@ class UserUpload {
                 $mysqli->rollback();
             } else {
                 $mysqli->commit();
+                echo "Users imported successfully\n";
             }
         } catch ( Exception $e ) {
             echo "Error: " . $e->getMessage() . "\n";

@@ -44,7 +44,7 @@ This directive will:
 
 - Create the database `website_users` if it does not exist. *I notice the task documentation didn't instruct adding a database name command line argument. So I have made an assumption I need to create the database as part of the task.*  
 - Create the `users` table if it doesn't exist 
-- Parse the CSV file for users. If invalid data is found: the script exits without making any changes to the database  
+- Parse the CSV file for users. If invalid data is found: the script notifies of the issue and skips importing that user.    
 - "Upsert" the user data into the `users` table. Ie, if an email already exists the other column details will be updated, else a new row is inserted into the table.
 
 *The user must specify the mysql host, username and password*
@@ -59,7 +59,7 @@ php user_upload.php --file "PATH_TO_FILE" --dry_run
 This directive will:
 
 - No SQL changes are applied/committed. Ie no database or table is created.  
-- Parse the CSV file for users. If invalid data is found: the script exits without making any changes to the database  
+- Parse the CSV file for users. If invalid data is found: the script notifies of the issue and skips importing that user.    
 - No SQL changes are applied/committed. Ie no rows are inserted/updated in the `users` table.
 
 *The user must specify the file but the user does NOT need to specify the mysql host, username and password*
